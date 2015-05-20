@@ -23,7 +23,7 @@ var raneto = {
 		page_sort_meta: 'sort',
 		// Should categories be sorted numerically (true) or alphabetically (false)
 		// If true category folders need to contain a "sort" file with an integer value
-		category_sort: true,
+		category_meta: true,
 		// Specify the path of your content folder where all your '.md' files are located
 		content_dir: './content/',
 		// Toggle debug logging
@@ -114,7 +114,7 @@ var raneto = {
 	getPages: function(activePageSlug) {
 		activePageSlug = activePageSlug || '';
 		var page_sort_meta = raneto.config.page_sort_meta || '',
-			category_sort = raneto.config.category_sort || false,
+			category_meta = raneto.config.category_meta || false,
 			files = glob.sync(raneto.config.content_dir +'**/*'),
 			filesProcessed = [];
 
@@ -137,6 +137,7 @@ var raneto = {
 
 			if(stat.isDirectory()){
 				var sort = 0;
+				var title = _s.titleize(_s.humanize(path.basename(shortPath)));
 
 				//ignore directories that has an ignore file under it
 				var ignoreFile = raneto.config.content_dir + shortPath +'/ignore';
@@ -144,19 +145,21 @@ var raneto = {
 					return true;
 				}
 
-				if(category_sort){
+				if(category_meta){
 					try {
-						var sortFile = fs.readFileSync(raneto.config.content_dir + shortPath +'/sort');
-						sort = parseInt(sortFile.toString('utf-8'), 10);
-					}
-					catch(e){
+						var metaFile = fs.readFileSync(raneto.config.content_dir + shortPath + '/meta');
+						var meta = raneto.processMeta(metaFile.toString('utf-8'));
+
+						if(meta.sort) sort = meta.sort;
+						if(meta.title) title = meta.title;
+					} catch(e){
 						if(raneto.config.debug) console.log(e);
 					}
 				}
 
 				filesProcessed.push({
 					slug: shortPath,
-					title: _s.titleize(_s.humanize(path.basename(shortPath))),
+					title: title,
 					is_index: false,
 					class: 'category-'+ raneto.cleanString(shortPath),
 					sort: sort,
